@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <button id="register" >
+            Register
+        </button>
+    </body>
+
+    <script>
+        var registerBtn = document.getElementById("register");
+
+
+        var charByChar = function(c) {
+            return c.charCodeAt(0);
+        };
+
+        var publicKeyCredentialCreationOptions = {
+            challenge: Uint8Array.from("{{ challenge }}", charByChar),
+            rp: {
+                name: "WebAuthn Server",
+                id: "localhost",
+            },
+            user: {
+                id: Uint8Array.from("{{ userId }}", charByChar),
+                name: "{{ userId }}",
+                displayName: "{{ userId }}",
+            },
+            pubKeyCredParams: [{alg: -7, type: "public-key"}],
+            attestation: "direct",
+        };
+
+        registerBtn.addEventListener("click", function() {
+            navigator.credentials.create({
+                publicKey: publicKeyCredentialCreationOptions,
+            }).then(function(credential) {
+                console.log(credential);
+            });
+        });
+    </script>
+</html>
+
