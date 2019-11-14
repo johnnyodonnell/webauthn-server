@@ -4,11 +4,39 @@
         <button id="register" >
             Register
         </button>
+
+        <button id="authenticate" >
+            Authenticate
+        </button>
     </body>
 
     <script>
-        var registerBtn = document.getElementById("register");
+        var ajax = function(method, path, body, cback) {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() {
+                if (xmlHttp.readyState === XMLHttpRequest.DONE) {
+                    cback(null, xmlHttp.responseText);
+                }
+            };
 
+            xmlHttp.open(method, path);
+            xmlHttp.setRequestHeader(
+                "Content-Type", "application/json;charset=UTF-8");
+            console.log(body);
+            xmlHttp.send(JSON.stringify(body));
+        };
+
+        var arrayBufferToBase64 = function(buffer) {
+            var binary = "";
+            var bytes = new Uint8Array(buffer);
+            var len = bytes.byteLength;
+
+            for (var i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+
+            return window.btoa(binary);
+        }
 
         var charByChar = function(c) {
             return c.charCodeAt(0);
@@ -29,11 +57,33 @@
             attestation: "direct",
         };
 
+        var registerBtn = document.getElementById("register");
+
         registerBtn.addEventListener("click", function() {
             navigator.credentials.create({
                 publicKey: publicKeyCredentialCreationOptions,
             }).then(function(credential) {
-                console.log(credential);
+                const stringifiableCredential = {
+                    id: credential.id,
+                    rawId: arrayBufferToBase64(credential.rawId),
+                    type: credential.type,
+                    response: {
+                        attestationObject: arrayBufferToBase64(
+                            credential.response.attestationObject),
+                        clientDataJSON: arrayBufferToBase64(
+                            credential.response.clientDataJSON),
+                    },
+                };
+
+                ajax("POST", "register", stringifiableCredential,
+                    function(err, text) {
+                        if (err) {
+                            alert(err);
+                        } else {
+                            alert("Registration successful!");
+                            location.reload();
+                        }
+                    });
             });
         });
     </script>
