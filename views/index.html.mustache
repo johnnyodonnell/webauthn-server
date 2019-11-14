@@ -15,14 +15,13 @@
             var xmlHttp = new XMLHttpRequest();
             xmlHttp.onreadystatechange = function() {
                 if (xmlHttp.readyState === XMLHttpRequest.DONE) {
-                    cback(null, xmlHttp.responseText);
+                    cback(null, JSON.parse(xmlHttp.responseText));
                 }
             };
 
             xmlHttp.open(method, path);
             xmlHttp.setRequestHeader(
                 "Content-Type", "application/json;charset=UTF-8");
-            console.log(body);
             xmlHttp.send(JSON.stringify(body));
         };
 
@@ -54,7 +53,8 @@
                 displayName: "{{ userId }}",
             },
             pubKeyCredParams: [{alg: -7, type: "public-key"}],
-            attestation: "direct",
+            attestation: "none",
+            userVerification: "discouraged",
         };
 
         var registerBtn = document.getElementById("register");
@@ -76,14 +76,39 @@
                 };
 
                 ajax("POST", "register", stringifiableCredential,
-                    function(err, text) {
+                    function(err, res) {
+                        console.log(res);
+
                         if (err) {
                             alert(err);
-                        } else {
+                        } else if (res) {
                             alert("Registration successful!");
                             location.reload();
+                        } else {
+                            alert("Registration unsuccessful");
                         }
                     });
+            });
+        });
+
+        var publicKeyCredentialRequestOptions = {
+            challenge: Uint8Array.from("{{ challenge }}", charByChar),
+            userVerification: "discouraged",
+            rpId: "localhost",
+            allowCredentials: [{
+                id: Uint8Array.from("{{ credentialId }}", charByChar),
+                type: "public-key",
+                transports: ["usb"],
+            }],
+        };
+
+        var authenticateBtn = document.getElementById("authenticate");
+
+        authenticateBtn.addEventListener("click", function() {
+            navigator.credentials.get({
+                publicKey: publicKeyCredentialRequestOptions,
+            }).then(function(attestation) {
+                console.log(attestation);
             });
         });
     </script>
