@@ -3,6 +3,7 @@ const uuid = require("uuid/v4");
 const mustacheExpress = require("mustache-express");
 const bodyParser = require("body-parser");
 const cbor = require("cbor");
+const { encode } = require("base64-arraybuffer");
 
 
 const userId = "odjohnny";
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 
 app.post("/register", (req, res) => {
     const credential = req.body;
+    console.log(credential.id);
 
     const decodedClientData = JSON.parse(
         Buffer.from(credential.response.clientDataJSON, "base64").toString());
@@ -48,8 +50,10 @@ app.post("/register", (req, res) => {
                     authData.slice(55, 55 + credentialIdLength);
                 const publicKeyBytes = authData.slice(55 + credentialIdLength);
 
+                console.log(encode(credentialId));
+
                 registeredKeys[userId] = {
-                    credentialId: credential.id,
+                    credentialId: encode(credentialId),
                     publicKeyBytes,
                 };
             });

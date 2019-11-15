@@ -25,6 +25,18 @@
             xmlHttp.send(JSON.stringify(body));
         };
 
+        var charByChar = function(c) {
+            return c.charCodeAt(0);
+        };
+
+        var base64ToArrayBuffer = function(base64) {
+            return Uint8Array.from(atob(base64), charByChar);
+        };
+
+        var toArrayBuffer = function(string) {
+            return Uint8Array.from(string, charByChar);
+        };
+
         var arrayBufferToBase64 = function(buffer) {
             var binary = "";
             var bytes = new Uint8Array(buffer);
@@ -37,23 +49,17 @@
             return window.btoa(binary);
         }
 
-        var charByChar = function(c) {
-            return c.charCodeAt(0);
-        };
-
         var publicKeyCredentialCreationOptions = {
-            challenge: Uint8Array.from("{{ challenge }}", charByChar),
+            challenge: toArrayBuffer("{{ challenge }}"),
             rp: {
                 name: "WebAuthn Server",
-                id: "localhost",
             },
             user: {
-                id: Uint8Array.from("{{ userId }}", charByChar),
+                id: toArrayBuffer("{{ userId }}"),
                 name: "{{ userId }}",
                 displayName: "{{ userId }}",
             },
             pubKeyCredParams: [{alg: -7, type: "public-key"}],
-            attestation: "none",
             userVerification: "discouraged",
         };
 
@@ -92,13 +98,12 @@
         });
 
         var publicKeyCredentialRequestOptions = {
-            challenge: Uint8Array.from("{{ challenge }}", charByChar),
+            challenge: toArrayBuffer("{{ challenge }}"),
             userVerification: "discouraged",
-            rpId: "localhost",
             allowCredentials: [{
-                id: Uint8Array.from("{{ credentialId }}", charByChar),
+                id: base64ToArrayBuffer("{{& credentialId }}"),
                 type: "public-key",
-                transports: ["usb"],
+                transports: ["usb", "nfc", "ble"],
             }],
         };
 
