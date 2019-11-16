@@ -61,6 +61,11 @@
             },
             pubKeyCredParams: [{alg: -7, type: "public-key"}],
             userVerification: "discouraged",
+            excludeCredentials: [{
+                id: base64ToArrayBuffer("{{& credentialId }}"),
+                type: "public-key",
+                transports: ["usb", "nfc", "ble"],
+            }],
         };
 
         var registerBtn = document.getElementById("register");
