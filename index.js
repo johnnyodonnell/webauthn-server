@@ -4,11 +4,12 @@ const mustacheExpress = require("mustache-express");
 const bodyParser = require("body-parser");
 const cbor = require("cbor");
 const { encode } = require("base64-arraybuffer");
+const crypto = require("crypto");
 
 
 const userId = "odjohnny";
 
-const registrationRequests = {};
+const challenges = {};
 const registeredKeys = {};
 
 const app = express();
@@ -20,7 +21,7 @@ app.use(bodyParser.json());
 
 app.get("/", (req, res) => {
     const challenge = uuid();
-    registrationRequests[userId] = challenge;
+    challenges[userId] = challenge;
 
     const credentialId =
         registeredKeys[userId] && registeredKeys[userId].credentialId;
@@ -30,15 +31,14 @@ app.get("/", (req, res) => {
 
 app.post("/register", (req, res) => {
     const credential = req.body;
-    console.log(credential.id);
 
     const decodedClientData = JSON.parse(
         Buffer.from(credential.response.clientDataJSON, "base64").toString());
     const decodedChallenge =
         Buffer.from(decodedClientData.challenge, "base64").toString();
 
-    if (registrationRequests[userId] &&
-            (registrationRequests[userId] === decodedChallenge)) {
+    if (challenges[userId] &&
+            (challenges[userId] === decodedChallenge)) {
         cbor.decodeFirst(
             Buffer.from(credential.response.attestationObject, "base64"),
             (err, res) => {
@@ -50,8 +50,6 @@ app.post("/register", (req, res) => {
                     authData.slice(55, 55 + credentialIdLength);
                 const publicKeyBytes = authData.slice(55 + credentialIdLength);
 
-                console.log(encode(credentialId));
-
                 registeredKeys[userId] = {
                     credentialId: encode(credentialId),
                     publicKeyBytes,
@@ -60,6 +58,16 @@ app.post("/register", (req, res) => {
 
         return res.json(true);
     }
+
+    res.json(false);
+});
+
+app.post("/authenticate", (req, res) => {
+    const credential = req.body;
+
+    const credentialId = credential.rawId;
+    const signatureBuffer =
+        Buffer.from(credential.response.signature, "base64");
 
     res.json(false);
 });
