@@ -60,7 +60,7 @@
                 displayName: "{{ userId }}",
             },
             pubKeyCredParams: [{alg: -7, type: "public-key"}],
-            userVerification: "discouraged",
+            userVerification: "preferred",
             excludeCredentials: [{
                 id: base64ToArrayBuffer("{{& credentialId }}"),
                 type: "public-key",
