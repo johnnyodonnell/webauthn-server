@@ -6,6 +6,8 @@ const cbor = require("cbor");
 const { encode } = require("base64-arraybuffer");
 const crypto = require("crypto");
 
+const publicKeyUtils = require("./publicKeyUtils");
+
 
 const userId = "odjohnny";
 
@@ -37,8 +39,7 @@ app.post("/register", (req, res) => {
     const decodedChallenge =
         Buffer.from(decodedClientData.challenge, "base64").toString();
 
-    if (challenges[userId] &&
-            (challenges[userId] === decodedChallenge)) {
+    if (challenges[userId] && (challenges[userId] === decodedChallenge)) {
         cbor.decodeFirst(
             Buffer.from(credential.response.attestationObject, "base64"),
             (err, res) => {
@@ -52,7 +53,8 @@ app.post("/register", (req, res) => {
 
                 registeredKeys[userId] = {
                     credentialId: encode(credentialId),
-                    publicKeyBytes,
+                    publicKeyBytes:
+                        publicKeyUtils.COSEECDHAtoPKCS(publicKeyBytes),
                 };
             });
 
@@ -64,10 +66,30 @@ app.post("/register", (req, res) => {
 
 app.post("/authenticate", (req, res) => {
     const credential = req.body;
-
     const credentialId = credential.rawId;
+
+    const authData =
+        Buffer.from(credential.response.authenticatorData, "base64");
     const signatureBuffer =
         Buffer.from(credential.response.signature, "base64");
+    const decodedClientDataString =
+        Buffer.from(credential.response.clientDataJSON, "base64").toString();
+    const decodedClientData = JSON.parse(decodedClientDataString);
+    const decodedChallenge =
+        Buffer.from(decodedClientData.challenge, "base64").toString();
+
+    const hash =
+        crypto.createHash("SHA256").update(decodedClientDataString).digest();
+    const data = Buffer.concat([authData, hash]);
+
+    if (challenges[userId] && (challenges[userId] === decodedChallenge)
+            && registeredKeys[userId]
+            && crypto.createVerify("SHA256").update(data)
+                     .verify(publicKeyUtils.ASN1toPEM(
+                                registeredKeys[userId].publicKeyBytes),
+                             signatureBuffer)) {
+        return res.json(true);
+    }
 
     res.json(false);
 });
